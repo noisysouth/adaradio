@@ -8,8 +8,8 @@
   Written by Limor Fried/Ladyada for Adafruit Industries.
   MIT license, all text above must be included in any redistribution
  **************************************************************************/
-#define ESP32_S3_TFT // for ESP32-S3 TFT
-//#define HX8357 // for the Adafruit 3.5" TFT (HX8357) FeatherWing
+//#define ESP32_S3_TFT // for ESP32-S3 TFT
+#define HX8357 // for the Adafruit 3.5" TFT (HX8357) FeatherWing
 
 #include <Adafruit_GFX.h>    // Core graphics library
 #ifdef ESP32_S3_TFT
@@ -37,8 +37,11 @@
 
 #include "Adafruit_seesaw.h" // mini gamepad (on STEMMA QT)
 
-#include <Adafruit_VS1053.h> // for mp3 playing from microSD card; wants same pins as (HX8357) 3.5" sTFT? (5, 6, 9, 10)
-#include "Adafruit_DRV2605.h"
+#ifdef USE_MP3
+  #include <Adafruit_VS1053.h> // for mp3 playing from microSD card; wants same pins as (HX8357) 3.5" sTFT? (5, 6, 9, 10)
+#endif
+
+#include "Adafruit_DRV2605.h" // haptic
 
 Adafruit_DRV2605 drv; // haptic
 
@@ -205,64 +208,67 @@ uint32_t button_mask = (1UL << BUTTON_X) | (1UL << BUTTON_Y) | (1UL << BUTTON_ST
 //#define IRQ_PIN   5
 
 // ----------------------- mp3 sound output ----------------------------
-// sound module: Adafruit Music Maker FeatherWing
-// (3357 headphone version, or 1788 3W stereo amp version)
-// These are the pins used
-#define VS1053_RESET   -1     // VS1053 reset pin (not used!)
+#ifdef USE_MP3
+  // sound module: Adafruit Music Maker FeatherWing
+  // (3357 headphone version, or 1788 3W stereo amp version)
+  // These are the pins used
+  #define VS1053_RESET   -1     // VS1053 reset pin (not used!)
 
-// Feather ESP8266
-#if defined(ESP8266)
-  #define VS1053_CS      16     // VS1053 chip select pin (output)
-  #define VS1053_DCS     15     // VS1053 Data/command select pin (output)
-  #define CARDCS          2     // Card chip select pin
-  #define VS1053_DREQ     0     // VS1053 Data request, ideally an Interrupt pin
+  // Feather ESP8266
+  #if defined(ESP8266)
+    #define VS1053_CS      16     // VS1053 chip select pin (output)
+    #define VS1053_DCS     15     // VS1053 Data/command select pin (output)
+    #define CARDCS          2     // Card chip select pin
+    #define VS1053_DREQ     0     // VS1053 Data request, ideally an Interrupt pin
 
-// Feather ESP32
-#elif defined(ESP32) && !defined(ARDUINO_ADAFRUIT_FEATHER_ESP32S2) && !defined(ARDUINO_ADAFRUIT_FEATHER_ESP32S3_TFT)
-  #define VS1053_CS      32     // VS1053 chip select pin (output)
-  #define VS1053_DCS     33     // VS1053 Data/command select pin (output)
-  #define CARDCS         14     // Card chip select pin
-  #define VS1053_DREQ    15     // VS1053 Data request, ideally an Interrupt pin
+  // Feather ESP32
+  #elif defined(ESP32) && !defined(ARDUINO_ADAFRUIT_FEATHER_ESP32S2) && !defined(ARDUINO_ADAFRUIT_FEATHER_ESP32S3_TFT)
+    #define VS1053_CS      32     // VS1053 chip select pin (output)
+    #define VS1053_DCS     33     // VS1053 Data/command select pin (output)
+    #define CARDCS         14     // Card chip select pin
+    #define VS1053_DREQ    15     // VS1053 Data request, ideally an Interrupt pin
 
-// Feather Teensy3
-#elif defined(TEENSYDUINO)
-  #define VS1053_CS       3     // VS1053 chip select pin (output)
-  #define VS1053_DCS     10     // VS1053 Data/command select pin (output)
-  #define CARDCS          8     // Card chip select pin
-  #define VS1053_DREQ     4     // VS1053 Data request, ideally an Interrupt pin
+  // Feather Teensy3
+  #elif defined(TEENSYDUINO)
+    #define VS1053_CS       3     // VS1053 chip select pin (output)
+    #define VS1053_DCS     10     // VS1053 Data/command select pin (output)
+    #define CARDCS          8     // Card chip select pin
+    #define VS1053_DREQ     4     // VS1053 Data request, ideally an Interrupt pin
 
-// WICED feather
-#elif defined(ARDUINO_STM32_FEATHER)
-  #define VS1053_CS       PC7     // VS1053 chip select pin (output)
-  #define VS1053_DCS      PB4     // VS1053 Data/command select pin (output)
-  #define CARDCS          PC5     // Card chip select pin
-  #define VS1053_DREQ     PA15    // VS1053 Data request, ideally an Interrupt pin
+  // WICED feather
+  #elif defined(ARDUINO_STM32_FEATHER)
+    #define VS1053_CS       PC7     // VS1053 chip select pin (output)
+    #define VS1053_DCS      PB4     // VS1053 Data/command select pin (output)
+    #define CARDCS          PC5     // Card chip select pin
+    #define VS1053_DREQ     PA15    // VS1053 Data request, ideally an Interrupt pin
 
-#elif defined(ARDUINO_NRF52832_FEATHER )
-  #define VS1053_CS       30     // VS1053 chip select pin (output)
-  #define VS1053_DCS      11     // VS1053 Data/command select pin (output)
-  #define CARDCS          27     // Card chip select pin
-  #define VS1053_DREQ     31     // VS1053 Data request, ideally an Interrupt pin
+  #elif defined(ARDUINO_NRF52832_FEATHER )
+    #define VS1053_CS       30     // VS1053 chip select pin (output)
+    #define VS1053_DCS      11     // VS1053 Data/command select pin (output)
+    #define CARDCS          27     // Card chip select pin
+    #define VS1053_DREQ     31     // VS1053 Data request, ideally an Interrupt pin
 
-// Feather RP2040
-#elif defined(ARDUINO_ADAFRUIT_FEATHER_RP2040)
-  #define VS1053_CS       8     // VS1053 chip select pin (output)
-  #define VS1053_DCS     10     // VS1053 Data/command select pin (output)
-  #define CARDCS          7     // Card chip select pin
-  #define VS1053_DREQ     9     // VS1053 Data request, ideally an Interrupt pin
+  // Feather RP2040
+  #elif defined(ARDUINO_ADAFRUIT_FEATHER_RP2040)
+    #define VS1053_CS       8     // VS1053 chip select pin (output)
+    #define VS1053_DCS     10     // VS1053 Data/command select pin (output)
+    #define CARDCS          7     // Card chip select pin
+    #define VS1053_DREQ     9     // VS1053 Data request, ideally an Interrupt pin
 
-// Feather M4, M0, 328, ESP32S2, ESP32S3 TFT, nRF52840 or 32u4
-#else
-  #define VS1053_CS       6     // VS1053 chip select pin (output)
-  #define VS1053_DCS     10     // VS1053 Data/command select pin (output)
-  #define CARDCS          5     // Card chip select pin
-  // DREQ should be an Int pin *if possible* (not possible on 32u4)
-  #define VS1053_DREQ     9     // VS1053 Data request, ideally an Interrupt pin
+  // Feather M4, M0, 328, ESP32S2, ESP32S3 TFT, nRF52840 or 32u4
+  #else
+    #define VS1053_CS       6     // VS1053 chip select pin (output)
+    #define VS1053_DCS     10     // VS1053 Data/command select pin (output)
+    #define CARDCS          5     // Card chip select pin
+    // DREQ should be an Int pin *if possible* (not possible on 32u4)
+    #define VS1053_DREQ     9     // VS1053 Data request, ideally an Interrupt pin
+
+  #endif
+
+  Adafruit_VS1053_FilePlayer musicPlayer =
+    Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
 
 #endif
-
-Adafruit_VS1053_FilePlayer musicPlayer =
-  Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
 
 // ----------------------- window structures ----------------------------
 
@@ -508,6 +514,7 @@ void setup(void) {
   Serial.println(F("Hello! Welcome to windw serial port!"));
 
   // ------------------------ Start mp3 sound output ------------------------------------
+#ifdef USE_MP3
   Serial.println(F("Checking MP3 sound output module (VS1053)..."));
   mp3_found = musicPlayer.begin();
   if (!mp3_found) { // initialise the music player
@@ -535,16 +542,17 @@ void setup(void) {
     // Set volume for left, right channels. lower numbers == louder volume!
     musicPlayer.setVolume(10,10);
 
-#if defined(__AVR_ATmega32U4__)
+  #if defined(__AVR_ATmega32U4__)
     // Timer interrupts are not suggested, better to use DREQ interrupt!
     // but we don't have them on the 32u4 feather...
     musicPlayer.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
-#else
+  #else
     // If DREQ is on an interrupt pin we can do background
     // audio playing
     musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT);  // DREQ int
-#endif
+  #endif
   }
+#endif
 
   // ------------------------ Start FM RDS Radio Tx ------------------------------------
   Serial.println(F("Checking FM RDS transmitter..."));
@@ -745,6 +753,7 @@ void setup(void) {
 }
 
 // ---------------------- MP3 sound output: list SD card files ------------------
+#ifdef USE_MP3
 /// File listing helper
 // print files on SD card, which should include sound files for this game
 void printDirectory(File dir, int numTabs) {
@@ -771,6 +780,7 @@ void printDirectory(File dir, int numTabs) {
      entry.close();
    }
 }
+#endif
 
 // ---------------------- CardKB mini keyboard constants ------------------
 #define KB_ADDR 0x5f
@@ -1575,6 +1585,7 @@ void ClickButton (struct button_s *btn) {
   DrawBorder (&tft, wnd, border_inset);
 
   // TODO: link to something the button knows.
+#ifdef USE_MP3
   if (mp3_found) {
     //musicPlayer.startPlayingFile("/radio_gaga.mp3");
     // "Interrupt based playback currently does not work on ESP32 platforms."
@@ -1583,6 +1594,7 @@ void ClickButton (struct button_s *btn) {
 
     musicPlayer.playFullFile("/radio_gaga.mp3");
   }
+#endif
 }
 
 
